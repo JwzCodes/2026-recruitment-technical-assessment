@@ -46,7 +46,29 @@ app.post("/parse", (req: Request, res: Response) => {
 // Takes in a recipeName and returns it in a form that
 const parse_handwriting = (recipeName: string): string | null => {
   // TODO: implement me test
-  return recipeName
+  // replace all - and _ with spaces
+  let cleaned = recipeName.replace(/[-_]+/g, ' ');
+
+  // THIS PART IS WRONG
+  // replace weird letters iwht actuall letters i.e @-a, 0-o 4-A
+  //cleaned = cleaned.replace("@", "a");
+  //cleaned = cleaned.replace("0", "o");
+
+  // remove all non letters
+  cleaned = cleaned.replace(/[^a-zA-Z\s]/g, '');
+  // replace all extra spaces
+  cleaned = cleaned.replace(/\s+/g, ' ');
+  cleaned = cleaned.toLocaleLowerCase();
+  if (cleaned.length === 0) {
+    return null;
+  }
+  cleaned = capitalizeFirstLetter(cleaned);
+
+  return cleaned;
+}
+
+function capitalizeFirstLetter(word: string): string {
+  return word.split(" ").map(word => word[0].toUpperCase() + word.slice(1)).join(" ");
 }
 
 // [TASK 2] ====================================================================
