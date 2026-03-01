@@ -18,6 +18,8 @@ interface recipe extends cookbookEntry {
 interface ingredient extends cookbookEntry {
   cookTime: number;
 }
+// this allows me to store both recipe and ingredient
+type Entry = recipe | ingredient;
 
 // =============================================================================
 // ==== HTTP Endpoint Stubs ====================================================
@@ -26,7 +28,7 @@ const app = express();
 app.use(express.json());
 
 // Store your recipes here!
-const cookbook: any = null;
+const cookbook = new Map<string, Entry>();
 
 // Task 1 helper (don't touch)
 app.post("/parse", (req: Request, res: Response) => {
@@ -73,11 +75,69 @@ function capitalizeFirstLetter(word: string): string {
 
 // [TASK 2] ====================================================================
 // Endpoint that adds a CookbookEntry to your magical cookbook
+
 app.post("/entry", (req: Request, res: Response) => {
   // TODO: implement me
-  res.status(500).send("not yet implemented!")
+  const item = req.body
+  // check if type is recipe or ingredient
+  if (!isRecipe(item) && !isIngredient(item)) {
+    res.status(400).send("not an ingredient or recipe")
+    return;
+  }
+  // check name for both
+  if (cookbook.has(item.name)) {
+    res.status(400).send("item is already in the cookbook");
+    return;
+  }
+  // check if cook time >= 0
+  if (isIngredient(item)) {
+    if (item.cookTime < 0) {
+      res.status(400).send("cook time is not >= 0")
+      return;
+    } else {
+      cookbook.set(item.name, {
+        type: "ingredient",
+        name: item.name,
+        cookTime: item.cookTime
+      });
 
+      res.status(200).send("");
+      return;
+    }
+  }
+
+
+  // check if required ters have one element per name
+  const seen = new Set<string>();
+  for (const recipe of item.requiredItems) {
+
+    if (seen.has(recipe.name)) {
+      res.status(400).send("duplicate name");
+      return;
+    }
+    seen.add(recipe.name);
+  }
+
+  cookbook.set(item.name, {
+    type: "recipe",
+    name: item.name,
+    requiredItems: item.requiredItems,
+  });
+
+  res.status(200).send("");
+  return;
 });
+
+function isRecipe(obj: any):
+  obj is recipe {
+  return obj &&
+    typeof obj.name === 'string';
+}
+function isIngredient(obj: any):
+  obj is ingredient {
+  return obj &&
+    typeof obj.name === 'string';
+}
 
 // [TASK 3] ====================================================================
 // Endpoint that returns a summary of a recipe that corresponds to a query name
